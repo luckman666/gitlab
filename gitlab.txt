@@ -1,0 +1,110 @@
+gitlab下载地址：
+https://mirrors.tuna.tsinghua.edu.cn/gitlab-ce/yum/el7/
+汉化包下载地址
+https://gitlab.com/xhang/gitlab
+下载地址
+第一步： 
+yum install -y curl openssh-server openssh-clients postfix cronie policycoreutils-python
+安装
+yum localinstall -y gitlab-ce-12.3.5-ce.0.el7.x86_64.rpm 
+
+vim /etc/gitlab/gitlab.rb
+修改URL：
+external_url 'http://gitlab.yangbo.com'
+
+提交配置
+gitlab-ctl reconfigure 
+重启
+gitlab-ctl restart
+查看状态
+gitlab-ctl sts 
+
+安装及汉化
+加反斜杠是直接覆盖
+\cp -rf /root/soft/gitlab-12-3-stable-zh/* /opt/gitlab/embedded/service/gitlab-rails/
+cp前面加斜杠是为了使用cp原始命令，而不是使用alias，这样在覆盖的时候不用询问。
+查看别名：vim ~/.bashrc
+消除rm询问：
+find /data/crm/tomcat_upload/logs/ -mtime +7 -type f -exec rm {} \;
+
+
+还得需要管理员设置
+User Settings-->preferences-->Language
+#########################
+
+vim /etc/gitlab/gitlab.rb
+配置邮箱：
+gitlab_rails['smtp_enable'] = true
+gitlab_rails['smtp_address'] = "smtp.qq.com"
+gitlab_rails['smtp_port'] = 465
+gitlab_rails['smtp_user_name'] = "xxxxxx@qq.com"
+gitlab_rails['smtp_password'] = "9999dddddxxasdj"
+gitlab_rails['smtp_domain'] = "qq.com"
+gitlab_rails['smtp_authentication'] = "login"
+gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_tls'] = true
+gitlab_rails['gitlab_email_from'] = 'xxxxxx@qq.com'
+gitlab_rails['gitlab_email_display_name'] = 'boge'
+gitlab_rails['gitlab_email_enabled'] = 'true'
+提交配置
+gitlab-ctl reconfigure 
+测试邮箱:
+gitlab-rails console
+Notify.test_email('sqvehn74892@chacuo.net','aaaa','test').deliver_now
+
+
+######################
+测试用的临时邮箱申请
+https://www.123cha.com/mailtemp/
+群组：
+先建群组再建用户和项目。
+父组成员被删除，子组成员也被删除
+如果先有的项目，后要添加到组，需要到项目--》具体项目--》设置--》成员-->邀请到群组
+关闭注册：
+扳手，设置，注册限制，取消对号，既关闭注册
+###############################
+
+备份：
+gitlab-rake gitlab:backup:create
+这个目录
+/var/opt/gitlab/backups
+https://www.cnblogs.com/ssgeek/p/9392104.html
+修改备份文件
+1.1 修改备份文件目录
+可以通过/etc/gitlab/gitlab.rb配置文件来修改默认存放备份文件的目录
+gitlab_rails['backup_path'] = "/var/opt/gitlab/backups"
+修改完成之后使用gitlab-ctl reconfigure命令重载配置文件即可
+
+1.2 设置备份过期时间
+[root@gitlab ~]# vim /etc/gitlab/gitlab.rb
+gitlab_rails['backup_keep_time'] = 604800        #以秒为单位
+
+1.3 gitlab自动备份
+创建定时任务
+[root@gitlab ~]# crontab -e
+0 2 * * * /opt/gitlab/bin/gitlab-rake gitlab:backup:create
+
+恢复
+先停止服务数据连接
+gitlab-ctl stop unicorn
+gitlab-ctl stop sidekiq
+指定要恢复的版本：
+gitlab-rake gitlab:backup:restore BACKUP=1583599258_2020_03_08_12.3.5
+然后启动服务
+gitlab-ctl start
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
